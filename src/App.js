@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, Share2, Home as HomeIcon, Scan, Send as SendIcon, Download, FileText } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
-
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Importa i TUOI componenti
 import Home from './components/Home';
@@ -146,6 +146,7 @@ function App() {
         </AppLayout>
       </div>
       <Analytics />
+      <SpeedInsights />
     </>  
   );
 }
