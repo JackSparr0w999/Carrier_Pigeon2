@@ -1,0 +1,60 @@
+{
+  "name": "Transfer",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID univoco della sessione di trasferimento"
+    },
+    "device_name": {
+      "type": "string",
+      "description": "Nome del dispositivo mittente"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL del file caricato"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nome originale del file"
+    },
+    "file_type": {
+      "type": "string",
+      "enum": [
+        "photo",
+        "video",
+        "document",
+        "text"
+      ],
+      "description": "Tipo di contenuto"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Dimensione del file in bytes"
+    },
+    "text_content": {
+      "type": "string",
+      "description": "Contenuto testuale se il tipo è text"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data di scadenza del trasferimento"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "expired"
+      ],
+      "default": "pending",
+      "description": "Status del trasferimento"
+    }
+  },
+  "required": [
+    "session_id",
+    "device_name",
+    "file_type"
+  ]
+}
