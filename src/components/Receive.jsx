@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Download, FileText, Image as ImageIcon, Video, ArrowLeft, Copy, Check, RefreshCw } from "lucide-react";
+import { getTransfers } from '../api/transfers';
+
 
 export default function Receive({ onNavigate }) {
   const [sessionId, setSessionId] = useState("");
@@ -12,53 +14,18 @@ export default function Receive({ onNavigate }) {
     
     setLoading(true);
     
-    // Simula caricamento da API - sostituisci con la tua logica
-    setTimeout(() => {
-      const mockData = [
-        {
-          id: 1,
-          file_type: "text",
-          text_content: "Ciao! Questo è un messaggio di testo inviato dal computer. Puoi copiarlo facilmente!",
-          device_name: "Computer di Marco",
-          created_date: new Date().toISOString()
-        },
-        {
-          id: 2,
-          file_type: "document",
-          file_name: "Presentazione_Progetto.pdf",
-          file_size: 3200000,
-          file_url: "#",
-          device_name: "MacBook Pro",
-          created_date: new Date().toISOString()
-        },
-        {
-          id: 3,
-          file_type: "photo",
-          file_name: "IMG_2024.jpg",
-          file_size: 2800000,
-          file_url: "#",
-          device_name: "iPhone di Marco",
-          created_date: new Date().toISOString()
-        },
-        {
-          id: 4,
-          file_type: "video",
-          file_name: "Video_Demo.mp4",
-          file_size: 15600000,
-          file_url: "#", 
-          device_name: "Computer di Marco",
-          created_date: new Date().toISOString()
-        }
-      ];
-      
-      // Simula risultati basati su session ID
-      if (sessionId.toUpperCase() === "ABC123" || sessionId.length >= 6) {
-        setTransfers(mockData);
-      } else {
-        setTransfers([]);
-      }
+    try {
+      // Chiama la funzione reale che si connette al tuo back-end
+      const data = await getTransfers(sessionId.toUpperCase());
+      setTransfers(data);
+    } catch (error) {
+      console.error('Errore caricamento:', error);
+      // Se c'è un errore, è utile svuotare i trasferimenti
+      setTransfers([]); 
+    } finally {
+      // Assicurati che loading sia sempre impostato su false
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const getFileIcon = (fileType) => {
@@ -90,7 +57,7 @@ export default function Receive({ onNavigate }) {
   };
 
   const handleDownload = (transfer) => {
-    if (transfer.file_url && transfer.file_url !== "#") {
+    if (transfer.file_url) {
       const link = document.createElement('a');
       link.href = transfer.file_url;
       link.download = transfer.file_name || 'download';
@@ -98,7 +65,7 @@ export default function Receive({ onNavigate }) {
       link.click();
       document.body.removeChild(link);
     } else {
-      alert(`Download simulato per: ${transfer.file_name}`);
+      alert(`Errore: URL del file non disponibile.`);
     }
   };
 

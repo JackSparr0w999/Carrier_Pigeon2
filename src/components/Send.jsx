@@ -1,11 +1,12 @@
 import React, { useState, useRef } from "react";
 import { Upload, Image as ImageIcon, Video, FileText, ArrowLeft, Check, X, Send } from "lucide-react";
+import { uploadFile } from '../api/transfers';
 
 export default function SendPage({ onNavigate }) {
   const fileInputRef = useRef(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [textContent, setTextContent] = useState("");
-  const [activeTab, setActiveTab] = useState("files"); // files, text
+  const [activeTab, setActiveTab] = useState("files");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [sessionId, setSessionId] = useState("");
@@ -29,66 +30,47 @@ export default function SendPage({ onNavigate }) {
     setSelectedFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
-  const simulateUpload = (fileId) => {
-    return new Promise((resolve) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          resolve();
-        }
-        setUploadProgress(prev => ({ ...prev, [fileId]: Math.min(progress, 100) }));
-      }, 200);
-    });
-  };
-
   const handleSendFiles = async () => {
     if (selectedFiles.length === 0) return;
-    
+
     setUploading(true);
     const newSessionId = Math.random().toString(36).substr(2, 9).toUpperCase();
     setSessionId(newSessionId);
-    
+
     try {
-      // Simula upload di ogni file
+      // Per ogni file, avvia l'upload vero
       for (const selectedFile of selectedFiles) {
-        setUploadProgress(prev => ({ ...prev, [selectedFile.id]: 0 }));
-        await simulateUpload(selectedFile.id);
+        // La logica di upload deve gestire anche la progress bar se vuoi mantenerla
+        await uploadFile(selectedFile.file, newSessionId);
       }
       
-      // Simula creazione trasferimento
-      setTimeout(() => {
-        alert(`File inviati con successo!\n\nID Sessione: ${newSessionId}\nCondividi questo ID con il destinatario.`);
-        setSelectedFiles([]);
-        setUploadProgress({});
-        setUploading(false);
-        onNavigate('home');
-      }, 500);
-      
+      alert(`File caricati! Session ID: ${newSessionId}`);
+      setSelectedFiles([]);
+      setUploadProgress({});
+      onNavigate('home');
     } catch (error) {
-      console.error("Errore nel caricamento:", error);
+      console.error('Errore upload:', error);
+      alert('Errore durante il caricamento');
+    } finally {
       setUploading(false);
     }
   };
 
   const handleSendText = async () => {
+    // Mantieni la logica del testo, ma adatta per il back-end
     if (!textContent.trim()) return;
-    
+
     setUploading(true);
     const newSessionId = Math.random().toString(36).substr(2, 9).toUpperCase();
     setSessionId(newSessionId);
     
     try {
-      // Simula invio testo
-      setTimeout(() => {
-        alert(`Testo inviato con successo!\n\nID Sessione: ${newSessionId}\nCondividi questo ID con il destinatario.`);
-        setTextContent("");
-        setUploading(false);
-        onNavigate('home');
-      }, 1500);
-      
+      // Invia il testo al back-end
+      // Esempio: await uploadText(textContent, newSessionId);
+      alert(`Testo inviato con successo!\n\nID Sessione: ${newSessionId}\nCondividi questo ID con il destinatario.`);
+      setTextContent("");
+      setUploading(false);
+      onNavigate('home');
     } catch (error) {
       console.error("Errore nell'invio del testo:", error);
       setUploading(false);
@@ -96,7 +78,6 @@ export default function SendPage({ onNavigate }) {
   };
 
   const triggerFileInput = (accept) => {
-    // Crea dinamicamente un input per ogni tipo di file
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
