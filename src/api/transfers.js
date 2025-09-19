@@ -1,101 +1,44 @@
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs, 
-  orderBy 
-} from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL 
-} from 'firebase/storage';
-import { db, storage } from '../firebase/config';
+import { supabase } from '../supabase/config';
 
-// ----------------------------------------------------
-// Funzione per caricare un file su Firebase Storage e registrare i metadati su Firestore
-// ----------------------------------------------------
+// Upload file
 export const uploadFile = async (file, sessionId) => {
-  if (!file) {
-    throw new Error("Nessun file fornito per l'upload.");
-  }
-  
-  // 1. Carica il file su Firebase Storage
-  const fileRef = ref(storage, `transfers/${sessionId}/${file.name}`);
-  await uploadBytes(fileRef, file);
-  const downloadURL = await getDownloadURL(fileRef);
-  
-  // 2. Determina il tipo di file in base al MIME type
-  let fileType = 'document';
-  if (file.type.startsWith('image/')) {
-    fileType = 'photo';
-  } else if (file.type.startsWith('video/')) {
-    fileType = 'video';
-  }
+  // Upload file a Supabase Storage
+  const fileName = `${Date.now()}-${file.name}`;
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('transfers')
+    .upload(fileName, file);
 
-  // 3. Salva i metadati del file nel database Firestore
-  await addDoc(collection(db, 'transfers'), {
-    sessionId,
-    fileName: file.name,
-    fileSize: file.size,
-    fileUrl: downloadURL,
-    deviceName: navigator.platform,
-    createdAt: new Date(),
-    fileType: fileType
-  });
-  
-  return { downloadURL, sessionId };
+  if (uploadError) throw uploadError;
+
+  // Ottieni URL pubblico
+  const { data: { publicUrl } } = supabase.storage
+    .from('transfers')
+    .getPublicUrl(fileName);
+
+  // Salva metadati nel database
+  const { data, error } = await supabase
+    .from('transfers')
+    .insert([{
+      session_id: sessionId,
+      file_name: file.name,
+      file_size: file.size,
+      file_url: publicUrl,
+      device_name: navigator.platform,
+      file_type: file.type.startsWith('image/') ? 'photo' : 'document'
+    }]);
+
+  if (error) throw error;
+  return { publicUrl, sessionId };
 };
 
-// ----------------------------------------------------
-// Funzione per salvare un messaggio di testo su Firestore
-// ----------------------------------------------------
-export const uploadText = async (text, sessionId) => {
-  if (!text.trim()) {
-    throw new Error("Il testo non può essere vuoto.");
-  }
-  
-  // Salva i dati testuali direttamente nel database Firestore
-  await addDoc(collection(db, 'transfers'), {
-    sessionId,
-    textContent: text,
-    deviceName: navigator.platform,
-    createdAt: new Date(),
-    fileType: 'text'
-  });
-  
-  return { sessionId };
-};
-
-// ----------------------------------------------------
-// Funzione per recuperare tutti i trasferimenti di una sessione
-// ----------------------------------------------------
+// Cerca trasferimenti
 export const getTransfers = async (sessionId) => {
-  if (!sessionId) {
-    throw new Error("ID di sessione non fornito.");
-  }
+  const { data, error } = await supabase
+    .from('transfers')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: false });
 
-  const q = query(
-    collection(db, 'transfers'),
-    where('sessionId', '==', sessionId),
-    orderBy('createdAt', 'desc')
-  );
-  
-  const querySnapshot = await getDocs(q);
-  
-  // Mappa i documenti Firestore in un array di oggetti JavaScript
-  const transfers = querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
-  // Adatta l'output per i componenti front-end
-  return transfers.map(transfer => {
-    if (transfer.createdAt) {
-      // Converte il timestamp di Firebase in un formato gestibile da JavaScript
-      transfer.created_date = transfer.createdAt.toDate().toISOString();
-    }
-    return transfer;
-  });
+  if (error) throw error;
+  return data;
 };

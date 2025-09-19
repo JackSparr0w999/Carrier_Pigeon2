@@ -43,7 +43,7 @@ export default function DesktopHome({ onNavigate }) {
               <Share2 className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">FileSync Desktop</h1>
+              <h1 className="text-4xl font-bold text-gray-900">Carrier Pigeon Desktop</h1>
               <p className="text-xl text-gray-600">Trasferisci file con i tuoi dispositivi mobili</p>
             </div>
           </div>
